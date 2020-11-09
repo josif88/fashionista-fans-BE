@@ -1,5 +1,9 @@
-const { firebaseApp } = require("./middleWares");
-const { getItems, getItemById, getComplexes,getComplexById } = require("./tools/db");
+const {
+  getItems,
+  getItemById,
+  getComplexes,
+  getComplexById,
+} = require("./tools/db");
 const {
   successOutput,
   serverErrorOutput,

@@ -2,6 +2,7 @@ const { firebaseApp } = require("../init");
 
 let db = firebaseApp.firestore();
 
+//get items
 module.exports.getItems = async (limit = 10) => {
   //get items
   let data = [];
@@ -56,6 +57,7 @@ module.exports.getItems = async (limit = 10) => {
   return data;
 };
 
+// get all complexes by id
 module.exports.getComplexes = async () => {
   let snap = await db.collection("complexes").get();
   let complexes = [];
@@ -63,6 +65,7 @@ module.exports.getComplexes = async () => {
   return complexes;
 };
 
+//get item by id
 module.exports.getItemById = async (id) => {
   let snap = await db.collection("items").doc(id).get();
   let item = snap.data();
@@ -73,23 +76,28 @@ module.exports.getItemById = async (id) => {
   return item;
 };
 
+//get store by id
 module.exports.getStoreById = async (id) => {
   let snap = await db.collection("stores").doc(id).get();
   store = snap.data();
   return store;
 };
+
+//get category by id
 module.exports.getCategoryById = async (id) => {
   let snap = await db.collection("itemCategory").doc(id).get();
   if (snap) return snap.data();
   return "category not found";
 };
+
+//get single tag by id
 module.exports.getTagById = async (id) => {
   let snap = await db.collection("tags").doc(id).get();
   if (snap) return snap.data();
   return "tag not found";
 };
 
-// adding full data flag to control redundant info we dont need
+// adding full data flag to control redundant info we don't need
 module.exports.getComplexById = async (id, fullData = true) => {
   let snap = await db.collection("complexes").doc(id).get();
   let complex = await snap.data();
@@ -101,7 +109,6 @@ module.exports.getComplexById = async (id, fullData = true) => {
       .get();
     let stores = [];
     storeSnap.forEach((store) => stores.push(store.data()));
-
     complex.stores = stores;
   }
 
