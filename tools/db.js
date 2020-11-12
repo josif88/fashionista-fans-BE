@@ -1,6 +1,6 @@
 const { firebaseApp } = require("../init");
 
-let db = firebaseApp.firestore();
+const db = firebaseApp.firestore();
 
 //get items
 module.exports.getItems = async (limit = 10) => {
@@ -80,7 +80,8 @@ module.exports.getItemById = async (id) => {
 module.exports.getStoreById = async (id) => {
   let snap = await db.collection("stores").doc(id).get();
   store = snap.data();
-  return store;
+  if (store) return store;
+  return "store not found";
 };
 
 //get category by id
@@ -113,4 +114,71 @@ module.exports.getComplexById = async (id, fullData = true) => {
   }
 
   return complex;
+};
+
+//get stores of single complex
+module.exports.getStores = async (complexUid, fullData = false) => {
+  let snap = await db
+    .collection("stores")
+    .where("complexUid", "==", complexUid)
+    .get();
+  if (snap.empty) return "complex not found";
+  let stores = [];
+  snap.forEach((store) => stores.push(store.data()));
+
+  if (fullData) {
+    //get every store items
+    //TODO above
+  }
+
+  return stores;
+};
+
+// get store by id
+module.exports.getStoreById = async (uid, fullData = true) => {
+  let snap = await db.collection("stores").doc(uid).get();
+  let store = await snap.data();
+  if (!store) return "no store found";
+
+  //if fullData true get all information related to the store
+  if (fullData) {
+    let itemsSnap = await db
+      .collection("items")
+      .where("storeUid", "==", uid)
+      .get();
+    let items = [];
+    itemsSnap.forEach((item) => items.push(item.data()));
+    store.items = items;
+
+    let complex = await this.getComplexById(store.complexUid, false);
+    store.complex = complex;
+  }
+
+  return store;
+};
+
+// get user by id if not document found create one for him
+module.exports.getUserById = async (id) => {
+  let snap = await db.collection("users").doc(id).get();
+
+  if (!snap.exists) {
+    let user = {
+      uid: id,
+      likedItems: [],
+      followedStores: [],
+      creationDate: Date.now(),
+      wishList: [],
+      notificationsSubs: [],
+    };
+    await db.collection("users").doc(id).set(user);
+    return user;
+  }
+
+  let user = snap.data();
+  return user;
+};
+
+module.exports.saveUser = async (user) => {
+  let snap = await db.collection("users").doc(user.uid).set(user);
+  return snap;
 };

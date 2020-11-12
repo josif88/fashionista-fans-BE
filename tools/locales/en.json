@@ -1,0 +1,7 @@
+{
+  "notFound": "Request not found",
+  "pleaseLogIn": "Please log in",
+  "serverError": "Server error",
+  "inputError": "Input error",
+  "itemNotFound": "Item not found"
+}
