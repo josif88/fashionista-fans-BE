@@ -7,9 +7,6 @@ const cors = require("cors");
 const app = express();
 app.use(cors({ origin: true }));
 
-//authentication
-app.use(auth);
-
 //figure user language
 app.use(setUiLanguage);
 

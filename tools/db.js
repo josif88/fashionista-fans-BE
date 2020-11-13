@@ -182,3 +182,57 @@ module.exports.saveUser = async (user) => {
   let snap = await db.collection("users").doc(user.uid).set(user);
   return snap;
 };
+
+//TODO:
+module.exports.getUserLikedItems = async (user) => {
+  if (!user.likedItems.length) return [];
+
+  let snap = await db
+    .collection("items")
+    .where("uid", "in", user.likedItems)
+    .get();
+
+  if (snap.empty) {
+    return "no items found";
+  }
+
+  let items = [];
+  snap.forEach((item) => items.push(item.data()));
+  return items;
+};
+
+//TODO:
+module.exports.getUserWishList = async (user) => {
+  if (!user.wishList.length) return [];
+
+  let snap = await db
+    .collection("items")
+    .where("uid", "in", user.wishList)
+    .get();
+
+  if (snap.empty) {
+    return "no items found";
+  }
+
+  let items = [];
+  snap.forEach((item) => items.push(item.data()));
+  return items;
+};
+//TODO:
+module.exports.getUserFollowedStoreItems = async (user) => {
+  if (!user.followedStores.length) return [];
+
+  let snap = await db
+    .collection("items")
+    .where("storeUid", "in", user.followedStores)
+    .orderBy("date")
+    .get();
+
+  if (snap.empty) {
+    return "no items found";
+  }
+
+  let items = [];
+  snap.forEach((item) => items.push(item.data()));
+  return items;
+};

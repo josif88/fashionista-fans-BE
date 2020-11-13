@@ -8,6 +8,7 @@ const {
 const I18n = require("./tools/language");
 const validate = require("validate.js");
 const validations = require("./tools/validations");
+const { async } = require("validate.js");
 
 module.exports.latestItems = async (req, res) => {
   //get limit query over 50 item not acceptable
@@ -76,52 +77,21 @@ module.exports.getStoreById = async (req, res) => {
 };
 
 //user favorites and preference handler
-module.exports.setUserPreference = async (req, res) => {
+module.exports.likeItem = async (req, res) => {
   try {
     //get item uid
     let itemUid = req.params.id;
 
-    //get user action if there is no action return error response
-    let action = req.query.action;
-    if (!action) return badRequestOutput(res, "No action found");
-
     //retrieve user object from DB
     let user = req.user;
 
-    switch (action) {
-      //TODO: find best handler method of user action
-      case "like": {
-        //check if user liked this item before, if true remove item uid from likedItems arr
-        if (user.likedItems.includes(itemUid)) {
-          user.likedItems = user.likedItems.filter((e) => e !== itemUid);
-          successOutput(res, user, "Unlike Item");
-        } else {
-          //add item uid to likedItem arr of to user
-          user.likedItems.push(itemUid);
-          successOutput(res, user, "Like Item");
-        }
-        break;
-      }
-      case "addToWishList": {
-        //check if user liked this item before, if true remove item uid from likedItems arr
-        if (user.wishList.includes(itemUid)) {
-          user.wishList = user.wishList.filter((e) => e !== itemUid);
-          successOutput(res, user, "Added to wish list");
-        } else {
-          //add item uid to likedItem arr of to user
-          user.wishList.push(itemUid);
-          successOutput(res, user, "Removed from wish list");
-        }
-        break;
-      }
-      case "unlike": {
-        //TODO: decide to keep it or remove this action parameter
-        break;
-      }
-      case "removeFromWishList": {
-        //TODO: decide to keep it or remove this action parameter
-        break;
-      }
+    if (user.likedItems.includes(itemUid)) {
+      user.likedItems = user.likedItems.filter((e) => e !== itemUid);
+      successOutput(res, user, "Unlike Item");
+    } else {
+      //add item uid to likedItem arr of to user
+      user.likedItems.push(itemUid);
+      successOutput(res, user, "Like Item");
     }
 
     //save changes to db
@@ -130,4 +100,108 @@ module.exports.setUserPreference = async (req, res) => {
   } catch (err) {
     return serverErrorOutput(res, err.message, "Error on like item");
   }
+};
+
+//user add item to wish list handler
+module.exports.addItemToWishList = async (req, res) => {
+  try {
+    //get item uid
+    let itemUid = req.params.id;
+
+    //retrieve user object from DB
+    let user = req.user;
+
+    if (user.wishList.includes(itemUid)) {
+      user.wishList = user.wishList.filter((e) => e !== itemUid);
+      successOutput(res, user, "Removed from wish list");
+    } else {
+      //add item uid to likedItem arr of to user
+      user.wishList.push(itemUid);
+      successOutput(res, user, "Added to wish list");
+    }
+
+    //save changes to db
+    await db.saveUser(user);
+    return;
+  } catch (err) {
+    return serverErrorOutput(
+      res,
+      err.message,
+      "Error while adding item to wish list"
+    );
+  }
+};
+
+//user follow store request handler
+module.exports.followStore = async (req, res) => {
+  try {
+    //get item uid
+    let storeUid = req.params.id;
+
+    //retrieve user object from DB
+    let user = req.user;
+
+    if (user.followedStores.includes(storeUid)) {
+      user.followedStores = user.followedStores.filter((e) => e !== storeUid);
+      successOutput(res, user, "Store not followed");
+    } else {
+      //add item uid to likedItem arr of to user
+      user.followedStores.push(storeUid);
+      successOutput(res, user, "store followed");
+    }
+
+    //save changes to db
+    await db.saveUser(user);
+    return;
+  } catch (err) {
+    return serverErrorOutput(res, err.message, "Error on following store");
+  }
+};
+
+//user get store notifications request handler
+module.exports.getStoreNotifications = async (req, res) => {
+  try {
+    //get item uid
+    let storeUid = req.params.id;
+
+    //retrieve user object from DB
+    let user = req.user;
+
+    if (user.notificationsSubs.includes(storeUid)) {
+      user.notificationsSubs = user.notificationsSubs.filter(
+        (e) => e !== storeUid
+      );
+      successOutput(res, user, "Subscribed to notification channel");
+    } else {
+      //add item uid to likedItem arr of to user
+      user.notificationsSubs.push(storeUid);
+      successOutput(res, user, "unsubscribed to Notification channel");
+    }
+
+    //save changes to db
+    await db.saveUser(user);
+    return;
+  } catch (err) {
+    return serverErrorOutput(
+      res,
+      err.message,
+      "Error on Subscribed to notification channel"
+    );
+  }
+};
+
+module.exports.getUserLikedItems = async (req, res) => {
+  //TODO: improve error handlers
+  let items = await db.getUserLikedItems(req.user);
+  return successOutput(res, items, "user liked items");
+};
+
+module.exports.getUserWishList = async (req, res) => {
+  let items = await db.getUserWishList(req.user);
+  return successOutput(res, items, "user wish list");
+};
+
+module.exports.getUserFollowedStoreItems = async (req, res) => {
+  let items = await db.getUserFollowedStoreItems(req.user);
+  return successOutput(res, items, "user wish list");
 };
