@@ -31,12 +31,23 @@ router.post("/store/follow/:id", auth, controllers.followStore);
 router.post("/store/notiSub/:id", auth, controllers.getStoreNotifications);
 
 // get user liked items from db, get based on item uid in liked items field of user object
-router.get("/user/likedItems/", auth, controllers.getUserLikedItems);
+router.post("/user/likedItems/", auth, controllers.getUserLikedItems);
 
 // get user wished items from db, get based on item uid in wished items list field of user object
-router.get("/user/wishList/", auth, controllers.getUserWishList);
+router.post("/user/wishList/", auth, controllers.getUserWishList);
 
 // get user followed items from db
 router.get("/user/followedStore/", auth, controllers.getUserFollowedStoreItems);
+
+//get store related items by itemCategory
+router.get("/item/related/:id", controllers.getStoreRelatedItems);
+
+//get store related items by itemCategory
+router.get("/item/complex/related/:id", controllers.getComplexRelatedItems);
+
+// get user obj from db
+router.get("/user", auth, async (req, res) => {
+  return res.json(req.user);
+});
 
 module.exports = router;

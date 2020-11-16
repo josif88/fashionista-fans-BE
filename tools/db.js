@@ -66,13 +66,22 @@ module.exports.getComplexes = async () => {
 };
 
 //get item by id
-module.exports.getItemById = async (id) => {
+module.exports.getItemById = async (id, fullDetails = true) => {
   let snap = await db.collection("items").doc(id).get();
   let item = snap.data();
-  item.store = await this.getStoreById(item.storeUid);
-  item.category = await this.getCategoryById(item.itemCategoryUid);
-  delete item.storeUid;
-  delete item.itemCategoryUid;
+  if (fullDetails) {
+    item.store = await this.getStoreById(item.storeUid);
+    item.category = await this.getCategoryById(item.itemCategoryUid);
+    delete item.storeUid;
+    delete item.itemCategoryUid;
+  }
+
+  return item;
+};
+
+//get item by id
+module.exports.saveItem = async (item) => {
+  await db.collection("items").doc(item.uid).set(item);
   return item;
 };
 
@@ -235,4 +244,63 @@ module.exports.getUserFollowedStoreItems = async (user) => {
   let items = [];
   snap.forEach((item) => items.push(item.data()));
   return items;
+};
+
+module.exports.getStoreRelatedItems = async (
+  itemUid,
+  itemCategoryUid,
+  storeUid
+) => {
+  let query = db
+    .collection("items")
+    .where("storeUid", "==", storeUid)
+    .where("uid", "!=", itemUid);
+  let snap = await query.where("itemCategoryUid", "==", itemCategoryUid).get();
+
+  if (snap.empty) {
+    return "no items found";
+  }
+
+  let items = [];
+  snap.forEach((item) => items.push(item.data()));
+  return items;
+};
+
+module.exports.getComplexRelatedItems = async (itemCategoryUid, storeUid) => {
+  let store = (await db.collection("stores").doc(storeUid).get()).data();
+
+  let complexUid = store.complexUid;
+
+  let complexStores = await db
+    .collection("stores")
+    .where("complexUid", "==", complexUid)
+    .limit(10)
+    .get();
+  let storesUid = [];
+  let stores = [];
+  complexStores.forEach((c) => {
+    storesUid.push(c.data().uid);
+    stores.push(c.data());
+  });
+
+  let items = await db
+    .collection("items")
+    .where("storeUid", "!=", storeUid)
+    .where("storeUid", "in", storesUid)
+    .where("itemCategoryUid", "==", itemCategoryUid)
+    .get();
+
+  let itemsArr = [];
+  items.forEach((i) => itemsArr.push(i.data()));
+
+  OUTER_LOOP: for (let i = 0; i < itemsArr.length; i++) {
+    for (let j = 0; j < stores.length; j++) {
+      if (stores[j].uid === itemsArr[i].storeUid) {
+        itemsArr[i].store = stores[j];
+        continue OUTER_LOOP;
+      }
+    }
+  }
+
+  return itemsArr;
 };

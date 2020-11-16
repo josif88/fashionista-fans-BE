@@ -14,6 +14,7 @@ module.exports.auth = (req, res, next) => {
       .verifyIdToken(token)
       .then(async (decodedUrl) => {
         req.user = await db.getUserById(decodedUrl.uid);
+
         return next();
       })
       .catch((err) => {
@@ -36,4 +37,10 @@ module.exports.setUiLanguage = (req, res, next) => {
 //404 response
 module.exports.notFound = (req, res, next) => {
   notFound(res);
+};
+
+//cors configurations
+module.exports.corsConfig = (req, res, next) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  return next();
 };

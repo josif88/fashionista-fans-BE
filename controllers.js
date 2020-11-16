@@ -79,25 +79,43 @@ module.exports.getStoreById = async (req, res) => {
 //user favorites and preference handler
 module.exports.likeItem = async (req, res) => {
   try {
-    //get item uid
+    //get item from db
     let itemUid = req.params.id;
+    let item = await db.getItemById(itemUid, false);
+    //create likes counter is null
+    if (!item.likeCounter) {
+      item.likeCounter = 0;
+    }
 
     //retrieve user object from DB
     let user = req.user;
 
     if (user.likedItems.includes(itemUid)) {
       user.likedItems = user.likedItems.filter((e) => e !== itemUid);
-      successOutput(res, user, "Unlike Item");
+      --item.likeCounter;
+      await db.saveItem(item);
+      successOutput(
+        res,
+        { itemLikeCounter: item.likeCounter, like: false },
+        "Unlike Item"
+      );
     } else {
       //add item uid to likedItem arr of to user
       user.likedItems.push(itemUid);
-      successOutput(res, user, "Like Item");
+      ++item.likeCounter;
+      await db.saveItem(item);
+      successOutput(
+        res,
+        { itemLikeCounter: item.likeCounter, like: true },
+        "Like Item"
+      );
     }
 
     //save changes to db
     await db.saveUser(user);
     return;
   } catch (err) {
+    console.log(err);
     return serverErrorOutput(res, err.message, "Error on like item");
   }
 };
@@ -113,11 +131,15 @@ module.exports.addItemToWishList = async (req, res) => {
 
     if (user.wishList.includes(itemUid)) {
       user.wishList = user.wishList.filter((e) => e !== itemUid);
-      successOutput(res, user, "Removed from wish list");
+      successOutput(
+        res,
+        { saved: false, item: itemUid },
+        "Removed from wish list"
+      );
     } else {
       //add item uid to likedItem arr of to user
       user.wishList.push(itemUid);
-      successOutput(res, user, "Added to wish list");
+      successOutput(res, { saved: true, item: itemUid }, "Added to wish list");
     }
 
     //save changes to db
@@ -204,4 +226,31 @@ module.exports.getUserWishList = async (req, res) => {
 module.exports.getUserFollowedStoreItems = async (req, res) => {
   let items = await db.getUserFollowedStoreItems(req.user);
   return successOutput(res, items, "user wish list");
+};
+
+module.exports.getStoreRelatedItems = async (req, res) => {
+  let item = await db.getItemById(req.params.id, false);
+  if (item) {
+    let items = await db.getStoreRelatedItems(
+      req.params.id,
+      item.itemCategoryUid,
+      item.storeUid
+    );
+    return successOutput(res, items, "store related items");
+  } else {
+    return successOutput(res, [], "no items found");
+  }
+};
+
+module.exports.getComplexRelatedItems = async (req, res) => {
+  let item = await db.getItemById(req.params.id, false);
+  if (item) {
+    let items = await db.getComplexRelatedItems(
+      item.itemCategoryUid,
+      item.storeUid
+    );
+    return successOutput(res, items, "complex related items");
+  } else {
+    return successOutput(res, [], "no items found");
+  }
 };
